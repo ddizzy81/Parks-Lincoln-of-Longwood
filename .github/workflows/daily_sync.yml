@@ -1,0 +1,35 @@
+name: Daily Inventory Refresh
+
+on:
+  schedule:
+    # Runs daily at 06:00 UTC (2:00 AM EDT)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run Scraper
+        run: python update_inventory.py
+
+      - name: Commit and Push Updated HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Auto-update inventory: $(date -u)" || exit 0
+          git push
